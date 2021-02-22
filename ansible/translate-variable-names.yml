@@ -1,0 +1,11 @@
+# Responsibility: Create new variables from currently existing variables
+# This allows different tools (eg. the Lumen framework, and the ansible mysql role) to retain their own variables
+
+- name: Translate variables from one tool for use with other tools
+  hosts: localhost
+
+  tasks:
+    - name: Set variable mysql_root_password for use with the mysql role
+      set_fact:
+        mysql_root_password: "{{db_password}}"
+      changed_when: false

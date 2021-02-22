@@ -1,0 +1,35 @@
+# Responsibility: Load variables from a .env file (located at vars.env_path) into the variable names mentioned vars.values
+#
+# Sourced from...
+# https://stackoverflow.com/questions/42253519/reading-multiple-values-from-an-env-file-with-ansible-and-storing-them-as-facts#42255589
+# This is not the best, since it echoes the environment variables to the screen
+
+- name: Load environment variables from a file
+  hosts: localhost
+  vars:
+    env_path: '../.env'
+    values:
+      - app_env
+      - db_host
+      - db_port
+      - db_database
+      - db_username
+      - db_password
+
+  tasks:
+    - name: Read values from environment
+      shell: "source {{ env_path }}; echo ${{ item|upper }}"
+      register: output
+      with_items: "{{ values }}"
+      args:
+        executable: /bin/bash
+      changed_when: false
+
+    - name: Store read value
+      set_fact:
+        "{{ item.0 }}": "{{ item.1.stdout }}"
+      when: '{{ item.0 }} is undefined'
+      with_together:
+        - "{{ values }}"
+        - "{{ output.results }}"
+      changed_when: false

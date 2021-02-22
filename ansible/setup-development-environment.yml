@@ -1,0 +1,60 @@
+# Responsibility: Setup everything the user needs to see an API response`
+
+- import_playbook: load-environment-variables-from-dot-env-file.yml
+- import_playbook: translate-variable-names.yml
+
+- name: Setup development environment
+  hosts: localhost
+  become: yes
+
+  roles:
+    # Consider the collection "community.mysql" in the future
+    - role: geerlingguy.mysql # Uses mysql_root_password to install mysql
+
+  tasks:
+    - name: Add database
+      mysql_db:
+        login_user: root
+        login_password: "{{mysql_root_password}}"
+        name: "{{db_database}}"
+        state: import
+        target: "{{playbook_dir | dirname}}/docker/schema.sql"
+
+    - name: Add non-root database user
+      mysql_user:
+        login_user: root
+        login_password: "{{mysql_root_password}}"
+        name: "{{db_username}}"
+        password: "{{db_password}}"
+        priv: "{{db_database}}.*:ALL"
+
+    - name: Add ondrej's PHP repository
+      apt_repository:
+        repo: ppa:ondrej/php
+
+    - name: Ensure that PHP 8 with extensions are installed
+      apt:
+        name: "{{packages}}"
+      vars: # This performs all installations with one command, which is better than with_items
+        packages:
+          - php8.0
+          - php8.0-cli
+          - php8.0-curl
+          - php8.0-ds
+          - php8.0-fpm
+          - php8.0-gd
+          - php8.0-intl
+          - php8.0-mbstring
+          - php8.0-mysql
+          - php8.0-opcache
+          - php8.0-simplexml
+          - php8.0-xml
+          - php8.0-zip
+
+    - name: Set startup services
+      service:
+        name: "{{item}}"
+        state: started
+        enabled: true
+      with_items:
+        - mysql
