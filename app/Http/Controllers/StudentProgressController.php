@@ -14,6 +14,7 @@ class StudentProgressController extends Controller
     public function get(int $userId): JsonResponse
     {
 		// sub-query to get count of practice records that have passed for the user
+		// NOTE: isComplete is cast to a boolean, so 0 will be false and any other number will be true
         $isComplete = \DB::raw("
 			SELECT COUNT(*)
 			FROM practice_records p
