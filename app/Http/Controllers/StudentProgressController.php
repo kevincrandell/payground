@@ -30,13 +30,13 @@ class StudentProgressController extends Controller
 		");
 
 		// merges above query parts into one and returns filtered results
-        return response()->json(
+        return response()->json(array("lessons" =>
 			LessonResult::join("segments AS s", "s.lesson_id", "=", "l.id")
 				->selectRaw(\DB::raw("l.id, ({$isComplete}) as isComplete, ($difficulty) as difficulty"))
 				->from('lessons AS l')
 				->setBindings([$userId])
 				->get()
 				->toArray()
-        );
+        ));
     }
 }
