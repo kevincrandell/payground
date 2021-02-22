@@ -16,6 +16,10 @@ use Illuminate\Database\Eloquent\Model;
  */
 class LessonResult extends Model
 {
+	/**
+	* Returns a list of all lessons for $userId, along with difficulty level and whether a segment
+	* was passed in the lesson or not.
+	*/
 	static function get($userId, $passScore = 80) {
 		// sub-query to get count of practice records that have passed for the user
 		// NOTE: isComplete is cast to a boolean, so 0 will be false and any other number will be true
