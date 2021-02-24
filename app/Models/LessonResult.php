@@ -24,9 +24,9 @@ class LessonResult extends Model
 		// sub-query to get count of practice records that have passed for the user
 		// NOTE: isComplete is cast to a boolean, so 0 will be false and any other number will be true
         $isComplete = \DB::raw("
-			SELECT COUNT(*)
+			SELECT 1
 			FROM practice_records p
-			WHERE p.segment_id = s.id AND p.score >= $passScore AND p.user_id = ?
+			WHERE p.segment_id = s.id AND p.score >= ? AND p.user_id = ?
 		");
 		// convert difficulty from number to strings
         $difficulty = \DB::raw("
@@ -37,15 +37,27 @@ class LessonResult extends Model
 			END
 		");
 
+		// full query
+		$sql = \DB::raw("
+			SELECT id, difficulty, MIN(passCount) isComplete FROM (
+				SELECT l.id id, EXISTS
+				($isComplete) as passCount,
+				($difficulty) as difficulty
+				FROM lessons l
+				JOIN segments s ON s.lesson_id = l.id
+			) test
+			GROUP BY id;
+		");
+
+		$results = \DB::select($sql, [$passScore, $userId]);
+
+		// convert 1/0 to boolean
+		foreach ($results as $item) {
+			$item->isComplete = $item->isComplete !== 0;
+		}
+
 		// merges above query parts into one and returns filtered results
-        return array("lessons" =>
-			self::join("segments AS s", "s.lesson_id", "=", "l.id")
-				->selectRaw(\DB::raw("l.id, ({$isComplete}) as isComplete, ($difficulty) as difficulty"))
-				->from('lessons AS l')
-				->setBindings([$userId])
-				->get()
-				->toArray()
-        );
+        return array("lessons" => $results);
 	}
 
     protected $table = "lessons";
